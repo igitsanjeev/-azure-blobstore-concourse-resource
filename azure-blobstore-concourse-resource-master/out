@@ -1,0 +1,48 @@
+#!/usr/bin/env ruby
+
+require_relative 'azure-blobstore-concourse-resource-common'
+
+request = JSON.parse(STDIN.read)
+
+source = request.fetch("source")
+file = request["params"]["file"]
+
+src_dir = ARGV[0]
+Dir.chdir src_dir
+src_files = Dir.glob(file)
+
+if src_files.size > 1
+  STDERR.puts "multiple files are matched for #{file}"
+  exit 1
+elsif src_files.size == 0
+  STDERR.puts "no matched file found for #{file}"
+  exit 1
+end
+
+src_file = src_files.first
+@storage_account_name = source["storage_account_name"]
+@storage_access_key = source["storage_access_key"]
+@container = source["container"]
+@environment = source["environment"]
+@regexp = source["regexp"]
+
+if @storage_access_key.nil?
+  STDERR.puts "PUT on public Azure blobstore container is not permited. Please provide storage_access_key."
+  exit 1
+end
+
+check_source
+
+if @regexp.include?("/")
+  dst_dir = File.dirname(source["regexp"])
+  dst_path = File.join(dst_dir, File.basename(src_file))
+else
+  dst_path = File.basename(src_file)
+end
+
+response = azure_cli("upload --quiet --container #{@container} --blob #{dst_path} --file #{src_file}")
+metadata = []
+response.each_pair {|k,v| metadata << {"name"=> k.to_s, "value"=>v.to_s }  }
+puts JSON.dump({ "version" => { "path" => dst_path },
+                 "metadata" => metadata
+                })

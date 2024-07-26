@@ -1,0 +1,16 @@
+# Use the Azure CLI image from Microsoft's container registry
+FROM mcr.microsoft.com/azure-cli:latest
+
+# Install Ruby using apk (Alpine's package manager)
+RUN apk update && \
+    apk upgrade && \
+    apk add --no-cache ruby ruby-dev
+
+# If ruby2.1 is not available directly, you may need to install it differently
+# Here, you manually set symlinks if ruby2.1 is supposed to be used, adjust accordingly
+RUN ln -sf /usr/bin/ruby /usr/bin/ruby2.1 && \
+    ln -sf /usr/bin/gem /usr/bin/gem2.1
+
+# Copy your scripts or resources into the image
+COPY check in out azure-blobstore-concourse-resource-common.rb /opt/resource/
+

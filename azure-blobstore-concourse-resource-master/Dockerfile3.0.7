@@ -1,0 +1,21 @@
+FROM mcr.microsoft.com/azure-cli
+
+# Update and install packages
+RUN apk update && \
+    apk upgrade && \
+    apk add --no-cache build-base wget curl git && \
+    apk add --no-cache ruby-bundler ruby-irb ruby-rake ruby-io-console ruby-bigdecimal ruby-json
+
+# Install specific Ruby version
+RUN wget -O ruby-install.tar.gz https://github.com/postmodern/ruby-install/archive/v0.8.3.tar.gz && \
+    tar -xzvf ruby-install.tar.gz && \
+    cd ruby-install-0.8.3 && \
+    make install && \
+    ruby-install ruby 3.0.7 && \
+    rm -rf /usr/local/src/ruby-3.0.7
+
+# Set PATH to include custom Ruby installation
+ENV PATH="/opt/rubies/ruby-3.0.7/bin:${PATH}"
+
+# Copy your scripts
+COPY check in out azure-blobstore-concourse-resource-common.rb /opt/resource/
